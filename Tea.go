@@ -8,13 +8,13 @@ import (
 )
 
 func EncryptByTea(content []byte, key []byte, rounds int) []byte {
-	// crypto/tea 源码里面加密轮数除以了 2
-	rounds = rounds << 1
-
 	block, err := tea.NewCipherWithRounds(key, rounds)
 	if err != nil {
 		return []byte{}
 	}
+	// crypto/tea 源码里面加密轮数除以了 2
+	rounds = rounds << 1
+
 	n := 8 - len(content)%8
 	encryptBytes := make([]byte, len(content)+n)
 	copyArray(&content, 0, &encryptBytes, 0, len(content))
@@ -26,6 +26,22 @@ func EncryptByTea(content []byte, key []byte, rounds int) []byte {
 		copyArray(&temp, 0, &result, offset, 8)
 	}
 	return result
+}
+
+func DecryptByTea(content []byte, key []byte, rounds int) []byte {
+	block, err := tea.NewCipherWithRounds(key, rounds)
+	if err != nil {
+		return []byte{}
+	}
+
+	result := make([]byte, len(content))
+	for offset := 0; offset < len(content); offset += 8 {
+		temp := make([]byte, 8)
+		block.Decrypt(temp, content[offset:offset+8])
+		copyArray(&temp, 0, &result, offset, 8)
+	}
+	lastIndex := len(result) - int(result[len(result)-1])
+	return result[:lastIndex]
 }
 
 func fillChar(content *[]byte, char byte, startIndex int, time int) {
@@ -65,4 +81,8 @@ func main() {
 
 	result := EncryptByTea(*text, *key, 16)
 	fmt.Println(hex.EncodeToString(result))
+
+	result1 := DecryptByTea(result, *key, 16)
+	fmt.Println(hex.EncodeToString(result1))
+
 }
