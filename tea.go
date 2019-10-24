@@ -8,12 +8,12 @@ import (
 )
 
 func EncryptByTea(content []byte, key []byte, rounds int) []byte {
-	block, err := tea.NewCipherWithRounds(key, rounds)
+	// crypto/tea 源码里面加密轮数除以了 2
+	rounds = rounds << 1
+	block, err := tea.NewCipherWithRounds(key, rounds << 1)
 	if err != nil {
 		return []byte{}
 	}
-	// crypto/tea 源码里面加密轮数除以了 2
-	rounds = rounds << 1
 
 	n := 8 - len(content)%8
 	encryptBytes := make([]byte, len(content)+n)
@@ -29,6 +29,8 @@ func EncryptByTea(content []byte, key []byte, rounds int) []byte {
 }
 
 func DecryptByTea(content []byte, key []byte, rounds int) []byte {
+	// crypto/tea 源码里面加密轮数除以了 2
+	rounds = rounds << 1
 	block, err := tea.NewCipherWithRounds(key, rounds)
 	if err != nil {
 		return []byte{}
